@@ -1,6 +1,6 @@
 const LABELS = {
   mmse: "First estimate", mmse_sic: "Subtract clear signals", classical: "Local search",
-  uniform: "Random search", qaoa: "Quantum-assisted search", ml_reference: "Exact search (reference)",
+  uniform: "Random search", qaoa: "QAOA-based search", ml_reference: "Exact search",
 };
 const $ = (selector, root = document) => root.querySelector(selector);
 const el = (tag, cls, text) => {
@@ -11,13 +11,20 @@ const el = (tag, cls, text) => {
 };
 const SVG = "http://www.w3.org/2000/svg";
 
-function renderCircuit(root, result, round, samples) {
+function renderCircuit(root, result = null, round = {}, samples = [], illustrative = false) {
   const host = $("#circuit-visual", root);
   const bits = round.bits || [];
-  const count = bits.length || result.model?.config?.k || 8;
-  const fields = new Set(round.field_qubits || []);
-  const pairs = round.coupling_pairs || [];
-  const candidate = samples?.[0]?.bits || "—";
+  const count = bits.length || result?.model?.config?.k || 8;
+  const fields = new Set(illustrative ? Array.from({length: count}, (_, i) => i) : (round.field_qubits || []));
+  const pairs = illustrative
+    ? Array.from({length: Math.floor(count / 2)}, (_, i) => [i * 2, i * 2 + 1])
+    : (round.coupling_pairs || []);
+  const candidateBits = samples?.[0]?.bits?.split("").reverse().join("") || "";
+  $("#circuit-title", root).textContent = illustrative ? "Example circuit" : "Circuit from this run";
+  $("#circuit-subtitle", root).textContent = illustrative
+    ? "Choose a stage to highlight its gates."
+    : "Select a stage to follow the gates used for this signal.";
+  $("#circuit-mode", root).textContent = illustrative ? "Illustration" : "This run";
   $("#circuit-qubit-count", root).textContent = `${count} uncertain bits`;
   const shownPairs = [];
   const occupied = new Set();
@@ -34,9 +41,9 @@ function renderCircuit(root, result, round, samples) {
   svg.setAttribute("role", "img");
   svg.setAttribute("aria-labelledby", "circuit-svg-title circuit-svg-desc");
   const title = document.createElementNS(SVG, "title"); title.id = "circuit-svg-title";
-  title.textContent = "Quantum circuit used for this signal decoding run";
+  title.textContent = illustrative ? "Example quantum circuit for signal decoding" : "Quantum circuit used for this signal decoding run";
   const desc = document.createElementNS(SVG, "desc"); desc.id = "circuit-svg-desc";
-  desc.textContent = `${count} wires pass through Hadamard, signal cost rotations, mixing rotations, and measurement. The circuit includes ${fields.size} single-bit rotations and ${pairs.length} pair interactions.`;
+  desc.textContent = `${count} wires pass through Hadamard, mismatch score rotations, mixing rotations, and measurement. ${illustrative ? "This is a teaching example, not a circuit generated from the current settings." : `This run includes ${fields.size} single-bit rotations and ${pairs.length} pair interactions.`}`;
   svg.append(title, desc);
   const add = (tag, attrs, text) => {
     const node = document.createElementNS(SVG, tag);
@@ -46,7 +53,7 @@ function renderCircuit(root, result, round, samples) {
   };
   const xs = {prepare: 225, cost: 390, pair: 525, mix: 675, measure: 830};
   const y0 = 59, gap = 38;
-  const groupNames = {prepare: "1 · Superposition", cost: "2 · Signal cost", pair: `RZZ × ${pairs.length}`, mix: "3 · Mixer", measure: "4 · Readout"};
+  const groupNames = {prepare: "1 · Superposition", cost: "2 · Mismatch score", pair: `RZZ × ${pairs.length}`, mix: "3 · Mixer", measure: "4 · Readout"};
   for (const [key, label] of Object.entries(groupNames)) add("text", {x: xs[key], y: 20, class: "circuit-column-label", "text-anchor": "middle"}, label);
   for (let i = 0; i < count; i++) {
     const y = y0 + i * gap;
@@ -63,6 +70,7 @@ function renderCircuit(root, result, round, samples) {
     add("text", {x: xs.mix, y: y + 4, class: "circuit-gate-text stage-mix", "text-anchor": "middle"}, "RX");
     add("rect", {x: xs.measure - 13, y: y - 13, width: 26, height: 26, rx: 13, class: "circuit-meter stage-measure"});
     add("text", {x: xs.measure, y: y + 4, class: "circuit-meter-text stage-measure", "text-anchor": "middle"}, "M");
+    add("text", {x: 892, y: y + 4, class: "circuit-sample", "text-anchor": "middle"}, candidateBits[i] || (illustrative ? "?" : "—"));
   }
   for (const pair of shownPairs) {
     const [a, b] = pair;
@@ -73,18 +81,22 @@ function renderCircuit(root, result, round, samples) {
     add("rect", {x: xs.pair - 21, y: middle - 8, width: 42, height: 16, rx: 2, class: "circuit-pair-gate stage-cost"});
     add("text", {x: xs.pair, y: middle + 3, class: "circuit-pair-text stage-cost", "text-anchor": "middle"}, "RZZ");
   }
-  add("text", {x: xs.measure, y: y0 - 13, class: "circuit-sample-label", "text-anchor": "middle"}, "sample");
-  add("text", {x: xs.measure, y: y0 + 4, class: "circuit-sample", "text-anchor": "middle"}, candidate);
+  add("text", {x: 892, y: y0 - 13, class: "circuit-sample-label", "text-anchor": "middle"}, "sample");
   if (pairs.length > shownPairs.length) add("text", {x: xs.pair, y: y0 + count * gap + 21, class: "circuit-column-label", "text-anchor": "middle"}, `+${pairs.length - shownPairs.length} pair gates bundled`);
   host.replaceChildren(svg);
 
   const explanations = {
     prepare: "H means Hadamard. It puts each selected bit into a quantum superposition, giving the circuit a starting spread of possible 0/1 combinations.",
-    cost: `RZ adjusts individual bits; each RZZ gate links a pair whose combined choice affects signal fit. This run encoded ${fields.size} individual terms and ${pairs.length} pair interactions from the receiver's signal model.`,
-    mix: "RX rotates every bit to explore different combinations. The circuit repeats this cost-and-mix layer once in this demo.",
-    measure: `Measurement turns the circuit state into ordinary 0/1 candidates. The most frequent sample here is ${candidate}; the receiver then checks candidates on a regular computer.`,
+    cost: illustrative
+      ? "RZ represents how one phone bit changes the mismatch score. RZZ represents how a pair of bits changes it together. The example draws a few pairs so you can see the pattern."
+      : `RZ adjusts individual bits; each RZZ gate links a pair whose combined choice changes the mismatch score. This run encoded ${fields.size} individual terms and ${pairs.length} pair interactions from the receiver's signal model.`,
+    mix: "RX rotates every bit to explore different combinations. The circuit repeats this mismatch-score and mixing layer once in this demo.",
+    measure: illustrative
+      ? "M means measurement: each wire eventually gives a regular 0 or 1. The question marks stand for results you will see after running the decoder."
+      : `Each M reads one wire as 0 or 1. The most frequent sample is ${candidateBits || "unavailable"}; the receiver then checks candidates on a regular computer.`,
   };
   const stageButtons = $("#circuit-stages", root);
+  stageButtons.querySelectorAll("[data-circuit-stage]").forEach((item) => item.setAttribute("aria-pressed", "false"));
   stageButtons.onclick = (event) => {
     const button = event.target.closest("[data-circuit-stage]");
     if (!button) return;
@@ -95,7 +107,11 @@ function renderCircuit(root, result, round, samples) {
     });
     $("#circuit-explanation", root).textContent = explanations[selected];
   };
-  stageButtons.querySelector('[data-circuit-stage="prepare"]')?.click();
+  $("#circuit-explanation", root).textContent = "The circuit prepares each bit, scores signal choices, explores alternatives, then measures guesses. Select a stage to highlight its gates.";
+}
+
+export function renderCircuitPreview(root) {
+  renderCircuit(root, null, {}, [], true);
 }
 
 export function renderComparison(root, result, selected = "qaoa") {
@@ -126,7 +142,7 @@ export function renderComparison(root, result, selected = "qaoa") {
     return line;
   }));
   const rec = $("#result-recipe", root);
-  rec.textContent = `${result.recipe.users} phones · clarity ${result.recipe.snr_db} dB · example ${result.recipe.scenario_index + 1}`;
+  rec.textContent = `${result.recipe.users} phones · signal clarity ${result.recipe.snr_db} dB · example ${result.recipe.scenario_index + 1}`;
   rec.title = result.recipe.group;
   $("#preview-placeholder", root).hidden = true;
   $("#bit-comparison", root).hidden = false;
@@ -140,18 +156,18 @@ export function renderHistogram(container, samples, total, kind) {
   const max = Math.max(...samples.map((row) => row.count), 1);
   container.replaceChildren(...samples.slice(0, 8).map((sample, index) => {
     const row = el("div", "histogram-row");
-    const bits = el("code", "histogram-bits", sample.bits);
+    const displayBits = sample.bits.split("").reverse().join("");
+    const bits = el("code", "histogram-bits", displayBits);
     const bar = el("span", "histogram-track");
     const fill = el("span", `histogram-fill ${kind}`); fill.style.width = `${Math.max(2, 100 * sample.count / max)}%`; bar.append(fill);
     const count = el("strong", "histogram-count", `${sample.count}×`);
-    row.title = `Candidate ${sample.bits}; sampled ${sample.count} of ${total} times; score ${Number(sample.energy).toFixed(4)}`;
+    row.title = `Guess for highlighted phones in wire order: ${displayBits}; appeared ${sample.count} of ${total} times`;
     row.append(el("span", "rank", String(index + 1)), bits, bar, count);
     return row;
   }));
 }
 
 export function renderQuantum(root, result) {
-  $("#quantum-placeholder", root).hidden = true;
   $("#quantum-results", root).hidden = false;
   const execution = result.execution || {};
   const card = $("#execution-card", root);
@@ -192,38 +208,36 @@ export function renderQuantum(root, result) {
       : "None of the tested fixes matched better, so the receiver kept its previous guess."));
     return section;
   }));
-  if (!rounds.length) trace.replaceChildren(el("p", "muted", "No successful QAOA round was returned; the valid classical incumbent remains available."));
+  if (!rounds.length) trace.replaceChildren(el("p", "muted", "The QAOA-based search did not return a usable round; the best regular-computer guess remains available."));
 }
 
 export function renderBenchmark(root, bootstrap) {
   const benchmark = bootstrap.benchmark || {};
-  const summary = benchmark.summary || {};
-  const preferred = ["mmse", "mmse_sic", "classical", "uniform", "qaoa", "ml_reference"];
-  const names = {mmse: "First estimate", mmse_sic: "Subtract clear signals", classical: "Local search", uniform: "Random search", qaoa: "Quantum search", ml_reference: "Exact search"};
-  const rows = preferred.map((key) => {
-    const item = summary[key] || {};
-    return {key, name: names[key], ber: Number(item.ber ?? item.BER ?? item.bit_error_rate ?? item.primary_ber)};
-  }).filter((item) => Number.isFinite(item.ber));
-  const chart = $("#benchmark-bars", root), max = Math.max(...rows.map((row) => row.ber), 1e-9);
-  chart.replaceChildren(...rows.map((row) => {
-    const line = el("div", `benchmark-row${row.key === "qaoa" ? " benchmark-quantum" : ""}`);
-    line.append(el("span", "benchmark-name", row.name));
+  // The page brief specifies this fixed 32,000-transmission presentation dataset.
+  const rows = [
+    {key: "mmse", name: "First estimate", value: "6.05%", ber: 6.05},
+    {key: "mmse_sic", name: "Subtract clear signals", value: "3.30%", ber: 3.30},
+    {key: "classical", name: "Local search", value: "3.21%", ber: 3.21},
+    {key: "uniform", name: "Random search", value: "2.69%", ber: 2.69},
+    {key: "qaoa", name: "QAOA-based search", value: "2.70%", ber: 2.70},
+    {key: "ml_reference", name: "Exact search", value: "2.61%", ber: 2.61},
+  ];
+  const max = 6.05;
+  for (const chart of root.querySelectorAll(".benchmark-bars")) chart.replaceChildren(...rows.map((row) => {
+    const line = el("div", `benchmark-row${row.key === "qaoa" ? " benchmark-quantum" : ""}${row.key === "ml_reference" ? " benchmark-exact" : ""}`);
+    const name = el("span", "benchmark-name", row.name);
+    if (row.key === "ml_reference") name.append(el("small", "benchmark-best", "Best possible"));
     const track = el("span", "benchmark-track"), fill = el("span", `benchmark-fill ${row.key === "qaoa" ? "qaoa" : row.key === "uniform" ? "uniform" : "classical"}`);
     fill.style.width = `${100 * row.ber / max}%`; track.append(fill);
-    line.append(track, el("strong", "benchmark-value", `${(row.ber * 100).toFixed(2)}%`));
+    line.append(name, track, el("strong", "benchmark-value", row.value));
     return line;
   }));
   const conclusion = $("#benchmark-conclusion", root);
-  conclusion.textContent = "The quantum and matched random searches performed about the same. This experiment did not show a quantum advantage.";
-  const paired = benchmark.comparisons || {};
-  const qaoaUniform = paired.uniform || null;
+  conclusion.textContent = "The reported averages differ by 0.01 percentage points. This test did not establish a quantum advantage.";
   const pairedRoot = $("#paired-evidence", root);
-  const ci = qaoaUniform?.ber_improvement_ci95 || [-0.0003369945, 0.0001284943];
-  const includesNoDifference = ci[0] <= 0 && ci[1] >= 0;
   pairedRoot.replaceChildren(
-    el("span", "paired-label", "Quantum vs random search"),
-    el("strong", "paired-difference", "No clear winner"),
-    el("span", "paired-interval", includesNoDifference ? "The uncertainty range includes no difference." : "The measured difference is outside the uncertainty range."),
+    el("span", "paired-label", "QAOA-based vs random search"),
+    el("strong", "paired-difference", "0.01 percentage-point gap"),
   );
 }
 

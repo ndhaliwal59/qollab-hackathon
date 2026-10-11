@@ -35,21 +35,20 @@ class Handler(BaseHTTPRequestHandler):
             self._json(dispatch(None, "bootstrap", "{}"))
             return
         if self.path in ("/", "/index.html"):
-            body = (WEB_ROOT / "index.html").read_text(encoding="utf-8")
-            page = ("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
-                    "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-                    "<meta name=\"theme-color\" content=\"#07111f\"><title>Signal Rescue — Live Lab</title>"
-                    "<link rel=\"stylesheet\" href=\"/web/main.css\"></head><body>" + body +
-                    "<script type=\"module\" src=\"/web/local.js\"></script></body></html>")
-            raw = page.encode("utf-8")
+            raw = (WEB_ROOT / "index.html").read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(raw)))
             self.end_headers()
             self.wfile.write(raw)
             return
-        if self.path.startswith("/web/"):
-            target = (WEB_ROOT / self.path.removeprefix("/web/")).resolve()
+        if (self.path.startswith("/web/") or self.path in ("/main.css", "/local.js")
+                or self.path.startswith(("/runtime/", "/ui/"))):
+            if self.path.startswith("/web/"):
+                asset_path = self.path.removeprefix("/web/")
+            else:
+                asset_path = self.path.lstrip("/")
+            target = (WEB_ROOT / asset_path).resolve()
             if target.parent != WEB_ROOT and WEB_ROOT not in target.parents:
                 self.send_error(404)
                 return

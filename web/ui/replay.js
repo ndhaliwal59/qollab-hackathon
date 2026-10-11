@@ -6,7 +6,7 @@ export function buildReplaySteps(result) {
   const initial = method("mmse"), classical = method("classical"), final = method("qaoa");
   const steps = [
     {stage: "receive", title: "The signals arrive together", estimate: null, duration: 1400,
-      description: `${result.recipe.users} users transmit ${result.truth_bits.length} bits through the same noisy channel at ${result.recipe.snr_db} dB. The receiver sees a mixture of all streams.`},
+      description: `${result.recipe.users} phones send one simple symbol each. The tower’s eight antennas hear overlapping versions of those symbols, mixed with noise.`},
     {stage: "estimate", title: "Make a first guess", estimate: initial.bits, residual: initial.residual, duration: 1400,
       description: `The first estimate gets ${initial.bits_total - initial.errors} of ${initial.bits_total} bits right.`},
     {stage: "refine", title: "Check nearby answers", estimate: classical.bits, residual: classical.residual, duration: 1200,
@@ -16,8 +16,8 @@ export function buildReplaySteps(result) {
   for (const [index, telemetry] of (result.qaoa_telemetry?.rounds || []).entries()) {
     const round = index + 1, selectedUsers = telemetry.bits || [];
     steps.push({stage: "select", round, selectedUsers, estimate, residual, duration: 1200,
-      title: `Choose ${selectedUsers.length} hard-to-guess bits`,
-      description: `The receiver revisits bits ${selectedUsers.map((user) => user + 1).join(", ")}. It holds the other bits steady while looking for a better combination.`});
+      title: `Focus on ${selectedUsers.length} uncertain phones`,
+      description: `The receiver’s first guess is least certain for phones ${selectedUsers.map((user) => user + 1).join(", ")}. It tries different combinations for those phones and holds the other guesses steady.`});
     if (telemetry.fallback) {
       steps.push({stage: "decide", round, selectedUsers, estimate, residual, duration: 1600,
         title: `Round ${round}: preserve the starting estimate`,
@@ -30,10 +30,10 @@ export function buildReplaySteps(result) {
     const count = samples.reduce((sum, sample) => sum + sample.count, 0);
     steps.push({stage: "measure", round, selectedUsers, estimate, residual, samples, duration: 1800,
       title: `Sample possible fixes`,
-      description: `The circuit produced ${count} guesses, with ${samples.length} different combinations. The most frequently sampled guesses appear below.`});
+      description: `The quantum circuit was measured ${count} times. Each measurement is a possible 0/1 fix for the highlighted phones, in wire order. The bars show how often each guess appeared; frequent does not mean correct.`});
     steps.push({stage: "refine", round, selectedUsers, estimate, residual, duration: 1500,
       title: `Check the sampled fixes`,
-      description: `A regular computer scores the sampled guesses and makes small changes to the strongest ${trace?.refined_candidates?.length || 0} candidates.`});
+      description: `A regular computer checks the sampled guesses against the antenna readings, then makes small changes to the strongest ${trace?.refined_candidates?.length || 0} candidates.`});
     if (trace?.incumbent_after) estimate = bits(trace.incumbent_after);
     else if (trace?.accepted && trace.refined_residuals?.length) {
       const winner = trace.refined_residuals.indexOf(Math.min(...trace.refined_residuals));
@@ -42,7 +42,7 @@ export function buildReplaySteps(result) {
     residual = telemetry.residual_after;
     steps.push({stage: "decide", round, selectedUsers, estimate, residual, duration: 1400,
       title: telemetry.accepted ? `Round ${round}: accept the correction` : `Round ${round}: keep the previous estimate`,
-      description: telemetry.accepted ? "The updated guess matches the received signal better, so the receiver keeps it." : "The new guesses did not improve the signal match, so the receiver keeps its previous answer."});
+      description: telemetry.accepted ? "The updated guess predicts what the antennas heard more closely, so the receiver keeps it." : "The new guesses did not predict the antenna readings more closely, so the receiver keeps its previous answer."});
   }
   steps.push({stage: "complete", estimate: final.bits, residual: final.residual, duration: 1100,
     title: result.execution.status === "partial" ? "Partial run: final preserved estimate" : "Decoding complete",
@@ -57,11 +57,20 @@ export class ReplayPlayer {
   }
   play(steps, onStep, speed = 1) {
     this.cancel();
-    Object.assign(this, {steps, onStep, index: 0, speed, playing: true});
+    Object.assign(this, {steps, onStep, index: 0, speed, playing: true, paused: false});
     const completion = new Promise((resolve) => { this.resolve = resolve; });
     if (!steps.length) this.end(true);
     else this.show();
     return completion;
+  }
+  select(steps, onStep, index = steps.length - 1) {
+    this.cancel();
+    Object.assign(this, {steps, onStep, index: Math.max(0, Math.min(index, steps.length - 1)), playing: false, paused: false});
+    if (steps.length) this.onStep(steps[this.index], this.index, steps.length);
+  }
+  reset() {
+    this.cancel();
+    Object.assign(this, {steps: [], onStep: null, index: 0, playing: false, paused: false});
   }
   show() {
     this.remaining = this.steps[this.index].duration;
@@ -86,10 +95,22 @@ export class ReplayPlayer {
     this.hold(); this.speed = speed; this.schedule();
   }
   next() {
-    if (!this.playing) return;
+    if (!this.steps?.length) return;
     this.clearTimer(this.timer);
-    if (++this.index >= this.steps.length) this.end(true);
-    else this.show();
+    if (this.index >= this.steps.length - 1) {
+      if (this.playing) this.end(true);
+      return;
+    }
+    this.index++;
+    if (this.playing) this.show();
+    else this.onStep(this.steps[this.index], this.index, this.steps.length);
+  }
+  previous() {
+    if (!this.steps?.length || this.index <= 0) return;
+    this.clearTimer(this.timer);
+    this.index--;
+    if (this.playing) this.show();
+    else this.onStep(this.steps[this.index], this.index, this.steps.length);
   }
   finish() {
     if (!this.playing) return;
@@ -132,7 +153,7 @@ export function renderReplay(root, result, step, index, total, previousEstimate 
   $("#playback-position").textContent = `${step.round ? `Round ${step.round} · ` : ""}Step ${index + 1} / ${total}`;
   $("#playback-title").textContent = step.title;
   $("#playback-description").textContent = step.description;
-  $("#playback-residual").textContent = step.residual === undefined ? "" : `Signal fit ${Number(step.residual).toPrecision(4)}`;
+  $("#playback-residual").textContent = step.residual === undefined ? "" : `Mismatch score ${Number(step.residual).toPrecision(4)} · lower is closer`;
   $("#decode-stages").replaceChildren(...STAGES.map(([id, label]) => {
     const item = node("li", id === step.stage || step.stage === "complete" ? "active" : "", label);
     if (id === step.stage) item.setAttribute("aria-current", "step");
@@ -154,7 +175,9 @@ export function renderReplay(root, result, step, index, total, previousEstimate 
   const candidates = $("#playback-candidates"); candidates.hidden = !step.samples?.length;
   candidates.replaceChildren(...(step.samples || []).slice(0, 6).map((sample) => {
     const item = node("div", "replay-sample");
-    item.append(node("code", "", sample.bits), node("strong", "", `${sample.count}×`));
+    const displayBits = sample.bits.split("").reverse().join("");
+    item.append(node("code", "", displayBits), node("strong", "", `${sample.count}×`));
+    item.title = `Guess for phones in the same order as the highlighted wires: ${displayBits}`;
     const track = node("span", "replay-sample-track"), fill = node("span", "");
     fill.style.width = `${100 * sample.count / Math.max(...step.samples.map((entry) => entry.count))}%`;
     track.append(fill); item.append(track); return item;

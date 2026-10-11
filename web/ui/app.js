@@ -1,5 +1,5 @@
 import {renderNetwork, setNetworkMotion} from "./network.js";
-import {renderBenchmark, renderComparison, renderQuantum} from "./results.js";
+import {renderBenchmark, renderCircuitPreview, renderComparison, renderQuantum} from "./results.js";
 import {ReplayPlayer, buildReplaySteps, renderReplay, runSeedSequence} from "./replay.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -8,11 +8,11 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
   const state = {users: 8, selected: "classical", preview: null, run: null, bootstrap: null, request: 0, latestPreviewId: null, activeRunId: null, activeRun: false, timer: null,
     player: new ReplayPlayer(), replayStep: null, runs: [], seeds: [], stopping: false, computing: false};
   const root = document;
+  renderCircuitPreview(root);
   $("#runtime-label", root).textContent = runtimeLabel;
-  $("#footer-status", root).textContent = "Simulated signals · no radio hardware";
   const button = $("#run-button", root), runHint = $("#run-hint", root), banner = $("#status-banner", root);
   const controls = [$("#snr-control", root), $("#scenario-select", root), $("#seed-select", root),
-    $("#shots-select", root), $("#next-scenario", root), $("#stress-button", root), $("#run-mode", root), ...root.querySelectorAll("[data-users]")];
+    $("#shots-select", root), $("#next-scenario", root), $("#stress-button", root), $("#run-mode", root), ...root.querySelectorAll("[data-users]")].filter(Boolean);
   const setLocked = (locked) => { state.activeRun = locked; controls.forEach((node) => { node.disabled = locked; }); button.disabled = locked || !state.bootstrap; };
   const spec = () => ({request_id: `sr-${Date.now().toString(36)}-${++state.request}`, users: state.users,
     snr_db: Number($("#snr-control", root).value), scenario_index: Number($("#scenario-select", root).value),
@@ -31,9 +31,10 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
     const stage = state.computing ? "The receiver is searching for a better guess" : state.player.playing ? "Following the recorded steps" : state.run ? "Showing the decoded result" : result ? "Starting guesses" : "Loading example";
     $("#scene-status", root).textContent = stage;
     const overloaded = state.users > 8;
-    $("#scene-title", root).textContent = overloaded ? "More phones than antennas." : "Space streams overlap.";
+    $("#scene-title", root).textContent = overloaded ? "More phones than antennas." : "Phone signals overlap.";
     $("#scene-condition", root).textContent = `${state.users} phones / 8 antennas${overloaded ? " · crowded" : ""}`;
-    $("#loading-hint", root).textContent = overloaded ? "12 phones · 8 tower antennas" : "8 phones · 8 tower antennas";
+    const loadingHint = $("#loading-hint", root);
+    if (loadingHint) loadingHint.textContent = overloaded ? "12 phones · 8 tower antennas" : "8 phones · 8 tower antennas";
   };
   const renderCurrent = () => {
     const result = state.run || state.preview;
@@ -55,11 +56,9 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
     $("#playback-panel", root).hidden = true;
     state.latestPreviewId = null;
     $("#quantum-results", root).hidden = true;
-    $("#quantum-placeholder", root).hidden = false;
-    $("#quantum-placeholder p", root).textContent = "Settings changed. Run the decoder to sample new candidate fixes.";
+    renderCircuitPreview(root);
     $("#comparison-title", root).textContent = "Compare the receiver’s guesses.";
     state.selected = "classical";
-    $("#export-button", root).disabled = true;
     renderCurrent();
   };
   let previewTimer;
@@ -111,7 +110,7 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
     const select = $("#scenario-select", root); select.value = String((Number(select.value) + 1) % 8);
     invalidateRun(); schedulePreview();
   });
-  $("#stress-button", root).addEventListener("click", () => {
+  $("#stress-button", root)?.addEventListener("click", () => {
     if (!state.bootstrap || state.activeRun) return;
     state.users = 12;
     root.querySelectorAll("[data-users]").forEach((item) => item.setAttribute("aria-pressed", String(Number(item.dataset.users) === 12)));
@@ -126,7 +125,11 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
     state.selected = row.dataset.detector; renderCurrent();
   });
   const playbackControls = () => {
-    for (const id of ["replay-pause", "replay-next", "replay-skip"]) $(`#${id}`, root).disabled = !state.player.playing;
+    const count = state.player.steps?.length || 0;
+    $("#replay-pause", root).disabled = !state.player.playing;
+    $("#replay-prev", root).disabled = !count || state.player.index <= 0;
+    $("#replay-next", root).disabled = !count || state.player.index >= count - 1;
+    $("#replay-skip", root).disabled = !state.player.playing;
     $("#replay-pause", root).textContent = state.player.paused ? "Resume" : "Pause";
     $("#replay-pause", root).setAttribute("aria-pressed", String(state.player.paused));
   };
@@ -145,10 +148,15 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
       chip.addEventListener("click", () => {
         state.run = result; state.preview = result; state.selected = "qaoa";
         $("#seed-select", root).value = String(seed);
-        const steps = buildReplaySteps(result); state.replayStep = steps.at(-1);
+        const steps = buildReplaySteps(result);
         renderCurrent(); renderQuantum(root, result);
-        renderReplay(root, result, state.replayStep, steps.length - 1, steps.length);
-        renderSeedProgress();
+        state.player.select(steps, (step, position, total) => {
+          state.replayStep = step;
+          state.selected = step.stage === "estimate" ? "mmse" : step.stage === "complete" ? "qaoa" : step.round || step.stage === "receive" ? null : "classical";
+          const previousEstimate = steps.slice(0, position).reverse().find((item) => item.estimate)?.estimate || "";
+          renderReplay(root, result, step, position, total, previousEstimate);
+          renderCurrent(); playbackControls(); renderSeedProgress();
+        });
       });
       return chip;
     }));
@@ -157,12 +165,15 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
     document.body.classList.toggle("motion-paused", paused);
     state.player.setPaused(paused);
     const toggle = $("#motion-toggle", root);
-    toggle.setAttribute("aria-pressed", String(paused)); toggle.textContent = paused ? "Resume" : "Pause";
-    toggle.setAttribute("aria-label", paused ? "Resume motion" : "Pause motion");
+    if (toggle) {
+      toggle.setAttribute("aria-pressed", String(paused)); toggle.textContent = paused ? "Resume" : "Pause";
+      toggle.setAttribute("aria-label", paused ? "Resume motion" : "Pause motion");
+    }
     setNetworkMotion($("#network-scene", root), paused);
     playbackControls();
   };
   $("#replay-pause", root).addEventListener("click", () => setPaused(!state.player.paused));
+  $("#replay-prev", root).addEventListener("click", () => state.player.previous());
   $("#replay-next", root).addEventListener("click", () => state.player.next());
   $("#replay-skip", root).addEventListener("click", () => state.player.finish());
   $("#replay-speed", root).addEventListener("change", (event) => state.player.setSpeed(Number(event.target.value)));
@@ -173,6 +184,8 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
   });
   button.addEventListener("click", async () => {
     if (!state.bootstrap || state.activeRun) return;
+    state.player.reset();
+    playbackControls();
     const base = spec();
     clearTimeout(previewTimer);
     state.latestPreviewId = null;
@@ -180,11 +193,10 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
     state.seeds = $("#run-mode", root).value === "all" ? state.bootstrap.supported.seeds : [base.seed];
     state.selected = "classical";
     setLocked(true); banner.hidden = true;
-    $("#export-button", root).disabled = true;
     $("#sweep-stop", root).hidden = state.seeds.length === 1;
     $("#sweep-stop", root).disabled = false;
     $("#quantum-results", root).hidden = true;
-    $("#quantum-placeholder", root).hidden = false;
+    renderCircuitPreview(root);
     $(".lab-card", root).scrollIntoView({behavior: "smooth", block: "start"});
     try {
       await runSeedSequence({
@@ -202,7 +214,8 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
           $("#playback-description", root).textContent = "The receiver is searching for better guesses. The step-by-step replay starts when it is done.";
           $("#playback-position", root).textContent = ""; $("#playback-residual", root).textContent = "";
           for (const id of ["decode-stages", "playback-bits", "playback-candidates"]) $(`#${id}`, root).replaceChildren();
-          $("#quantum-results", root).hidden = true; $("#quantum-placeholder", root).hidden = false;
+          $("#quantum-results", root).hidden = true;
+          renderCircuitPreview(root);
           const started = performance.now();
           state.timer = setInterval(() => {runHint.textContent = `Searching for candidate fixes · ${((performance.now() - started) / 1000).toFixed(1)} s`;}, 500);
           try { return await client.runQuantum(request); }
@@ -212,12 +225,12 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
           state.runs.push(result); state.run = result; state.preview = result; state.selected = "qaoa";
           renderQuantum(root, result);
           if (result.execution.warning) {banner.textContent = result.execution.warning; banner.hidden = false;}
-          const steps = buildReplaySteps(result); let previousEstimate = "";
+          const steps = buildReplaySteps(result);
           const showStep = (step, position, total) => {
             state.replayStep = step;
             state.selected = step.stage === "estimate" ? "mmse" : step.stage === "complete" ? "qaoa" : step.round || step.stage === "receive" ? null : "classical";
+            const previousEstimate = steps.slice(0, position).reverse().find((item) => item.estimate)?.estimate || "";
             renderReplay(root, result, step, position, total, previousEstimate);
-            previousEstimate = step.estimate || previousEstimate;
             renderCurrent(); playbackControls(); renderSeedProgress();
             runHint.textContent = `Following step ${position + 1} of ${total}`;
           };
@@ -245,18 +258,8 @@ export async function mountApp(client, {runtimeLabel = "Local Qiskit simulator",
       }
       renderCurrent(); playbackControls(); renderSeedProgress();
       $("#sweep-stop", root).hidden = true;
-      $("#export-button", root).disabled = !state.runs.length;
     }
   });
-  $("#motion-toggle", root).addEventListener("click", () => setPaused(!state.player.paused));
-  $("#export-button", root).addEventListener("click", () => {
-    if (!state.run) return;
-    const exported = state.seeds.length > 1 ? {kind: "seed_sweep", requested_seeds: state.seeds, stopped: state.stopping, runs: state.runs} : state.run;
-    const blob = new Blob([JSON.stringify(exported, null, 2)], {type: "application/json"});
-    const link = document.createElement("a"), url = URL.createObjectURL(blob); link.href = url;
-    link.download = `signal-rescue-${state.run.request_id}.json`; link.hidden = true;
-    root.body.append(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
+  $("#motion-toggle", root)?.addEventListener("click", () => setPaused(!state.player.paused));
   return state;
 }
