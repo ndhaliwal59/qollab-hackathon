@@ -1,0 +1,51 @@
+{
+  "seeds": [
+    7,
+    8
+  ],
+  "uses_per_seed": 4,
+  "configs": 4,
+  "max_evals": 10,
+  "starts": 1,
+  "training_uses": 24,
+  "validation_uses": 24,
+  "workers": 2,
+  "profile": "smoke",
+  "dataset": "both",
+  "dataset_status": {
+    "DeepMIMO": "available",
+    "source_cap_bytes": 100000000,
+    "processed_cap_bytes": 20000000
+  },
+  "families": [
+    "rayleigh",
+    "correlated",
+    "rician",
+    "deepmimo"
+  ],
+  "detector": "MMSE + bounded single/pair refinement + coupled block sampler",
+  "candidate_samplers": [
+    "qaoa",
+    "uniform",
+    "biased",
+    "sa"
+  ],
+  "budget": "frozen config; all sampler/refinement budgets matched",
+  "source_sha256": {
+    "__init__.py": "d153c799b82c42f8a45112a931db1e77734b8349399c65c04ec6d7fa9e5713e7",
+    "benchmark.py": "1bef3f3e73ebebae9cf8896d3a527a16d70e77e1172f39458113400bf7558e7d",
+    "channels.py": "4d904ae054b530efe2dfd9ae6712baf6715b50186e25ae436004cb832cd1cbb9",
+    "core.py": "2399e48fef2bd0bb5b0163b1789a927f1e029c0416be7fa4793e1bf74eb2b157",
+    "dataset.py": "bad24e6b3f80ca29b680007f29872a2aefde3a040cd54f098a9622aef08bc15f",
+    "detectors.py": "7ee935b4c1b31de37f265387adefd3a3baad80447a74cba4095eeceae69e41cc",
+    "hybrid.py": "5c3d55749919ddfc529bde6a9e8e01292b2ecd982e47ae8c28272fb29cd197d9",
+    "metrics.py": "d588849929cad149320f46063eb2b5142183395e582a8f406f2a6bce5e1ea71c",
+    "mmobile_data.py": "39983bc3a64163f9761fc4fc7035567805f138c368538167e52a1d15721777b5",
+    "mock_data.py": "27251c28527582b9471fbeed06a44a662becc82c7f5e9198b427f5768b9a527d",
+    "presentation.py": "cf26969359c81be665c03a2f3401dd8cb1e7656e0977728e33bee34eadd13d28",
+    "probe.py": "19f9289e841683f6cff9bf1c20ba523e367f50c809c0b16e2b9230594f577109",
+    "run_benchmark.py": "02ad05ba94470e17e331438a884ca33ee550f3b2302f9f36519922299a127c5a",
+    "samplers.py": "568f74d71a66a2035ad936f0ca6d56d1da607b3e3b249cb3cc813721e4af2adf",
+    "training.py": "157880c6bc4a9a8c143bef9e7a8b241c822384d6a66257ff024897d52a5e7a03"
+  }
+}

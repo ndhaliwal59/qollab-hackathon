@@ -1,0 +1,141 @@
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Signal Rescue home">
+      <span class="brand-mark" aria-hidden="true">◈</span>
+      <span>SIGNAL <span class="brand-light">RESCUE</span></span>
+    </a>
+    <div class="topbar-meta"><span class="live-dot"></span><span id="runtime-label">Live simulation</span></div>
+  </header>
+
+  <main id="top">
+    <section class="hero-intro" aria-labelledby="hero-title">
+      <h1 id="hero-title">Can a tower untangle <span>overlapping signals?</span></h1>
+      <p>See what several phones send, what the tower hears, and how a decoder tries to recover each phone’s bits.</p>
+    </section>
+
+    <div class="main-tabs" role="tablist" aria-label="Explore Signal Rescue">
+      <button id="tab-experiment" type="button" role="tab" aria-selected="true" aria-controls="panel-experiment" tabindex="0">Run experiment</button>
+      <button id="tab-algorithm" type="button" role="tab" aria-selected="false" aria-controls="panel-algorithm" tabindex="-1">How the quantum algorithm works</button>
+      <button id="tab-benchmark" type="button" role="tab" aria-selected="false" aria-controls="panel-benchmark" tabindex="-1">32,000-run benchmark</button>
+    </div>
+
+    <section id="panel-experiment" class="page-panel experiment-panel" role="tabpanel" aria-labelledby="tab-experiment" tabindex="0">
+      <div class="panel-intro"><h2>From phone bits to tower guesses</h2><p>This experiment focuses on the moment several wireless signals reach the tower together.</p></div>
+      <section class="signal-guide" aria-label="How to read this experiment">
+        <article class="signal-guide-step bit-encoding-step">
+          <span class="guide-step-label">Phone sends</span>
+          <h3>A bit becomes a signal</h3>
+          <p>This simple model uses Binary Phase Shift Keying (BPSK): 0 maps to +1; 1 maps to −1, the same wave flipped by 180°.</p>
+          <div class="bpsk-control">
+            <div class="bpsk-buttons" role="group" aria-label="Choose a bit to see its BPSK symbol">
+              <button type="button" data-bpsk-bit="0" aria-pressed="true">Send 0</button>
+              <button type="button" data-bpsk-bit="1" aria-pressed="false">Send 1</button>
+            </div>
+            <span id="bpsk-symbol" class="bpsk-symbol" aria-live="polite">0 → +1</span>
+          </div>
+          <svg class="bpsk-wave" viewBox="0 0 250 82" role="img" aria-labelledby="bpsk-wave-title bpsk-wave-desc">
+            <title id="bpsk-wave-title">A bit changes the phase of a simple signal</title>
+            <desc id="bpsk-wave-desc">The two possible BPSK signals are opposite waves. Use Send 0 or Send 1 to highlight one.</desc>
+            <line x1="12" y1="41" x2="238" y2="41" class="wave-axis"></line>
+            <path d="M12 41 C26 10 40 10 54 41 S82 72 96 41 S124 10 138 41 S166 72 180 41 S208 10 222 41 S236 58 238 54" class="wave-line wave-zero active"></path>
+            <path d="M12 41 C26 72 40 72 54 41 S82 10 96 41 S124 72 138 41 S166 10 180 41 S208 72 222 41 S236 24 238 28" class="wave-line wave-one"></path>
+          </svg>
+        </article>
+        <article class="signal-guide-step">
+          <span class="guide-step-label">Through the air</span>
+          <h3>Signals overlap</h3>
+          <p>Each radio path changes a signal’s strength and phase. Every tower antenna hears a different mix of all the phones, plus noise.</p>
+        </article>
+        <article class="signal-guide-step">
+          <span class="guide-step-label">At the tower</span>
+          <h3>Recover the bits</h3>
+          <p>The decoder uses all eight antenna readings to guess which phone sent each bit. Run it to watch the guesses and quantum-assisted search.</p>
+        </article>
+      </section>
+      <p class="model-scope"><strong>What this models:</strong> BPSK signal detection over ray-traced ASU radio paths, with generated bits and noise. Real 5G adds error-correction coding and OFDM; this demo skips those steps. It is not a full 5G modem or live radio.</p>
+      <section class="controls-wrap" aria-label="Experiment controls">
+        <div class="controls-grid">
+          <fieldset class="control-block"><legend>Phones transmitting</legend><div class="segmented" role="group" aria-label="Number of simultaneous streams"><button type="button" data-users="8" aria-pressed="true">8 phones</button><button type="button" data-users="12" aria-pressed="false">12 phones</button></div></fieldset>
+          <div class="control-block"><label for="snr-control">Signal clarity <span class="control-value"><output id="snr-output">12</output> <span>dB</span></span></label><input id="snr-control" class="range" type="range" min="0" max="20" step="4" value="12"><div class="range-ends"><span>Noisy</span><span>Clear</span></div></div>
+          <div class="run-block"><button id="run-button" class="button button-primary" type="button" disabled>Run experiment</button><span id="run-hint" class="run-hint" aria-live="polite">Preparing the receiver…</span></div>
+          <details class="advanced-controls"><summary>More options</summary><div class="advanced-grid">
+            <fieldset class="control-block"><legend>Channel example</legend><div class="select-line"><select id="scenario-select" aria-label="Channel example"><option value="0">ASU validation · 01</option><option value="1">ASU validation · 02</option><option value="2">ASU validation · 03</option><option value="3">ASU validation · 04</option><option value="4">ASU validation · 05</option><option value="5">ASU validation · 06</option><option value="6">ASU validation · 07</option><option value="7">ASU validation · 08</option></select><button class="text-action" id="next-scenario" type="button">Next example</button></div></fieldset>
+            <fieldset class="control-block"><legend>Repeat the experiment</legend><div class="select-line seed-line"><label for="seed-select">Repeat</label><select id="seed-select" aria-label="Repeat example"><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option></select><label for="shots-select">Samples per round</label><select id="shots-select" aria-label="Samples per round"><option value="64">64</option><option value="128">128</option></select></div></fieldset>
+            <div class="run-options"><label for="run-mode">Run</label><select id="run-mode"><option value="single">One example</option><option value="all">All five examples</option></select><label for="replay-speed">Walkthrough</label><select id="replay-speed"><option value="0.5">Slow</option><option value="1" selected>Normal</option><option value="2">Fast</option><option value="0">Skip animation</option></select></div>
+          </div></details>
+        </div>
+        <div id="status-banner" class="status-banner" role="status" aria-live="polite" hidden></div>
+      </section>
+
+      <section class="lab-card" aria-label="Simulated wireless channel">
+        <div class="scene-header"><div><h2 id="scene-title">Space streams overlap.</h2></div><span class="scene-condition" id="scene-condition">8 phones / 8 antennas</span></div>
+        <div class="network-scene" id="network-scene" role="img" aria-label="Illustrative network with eight connected phones and an eight antenna base station"></div>
+        <div class="scene-footer"><span class="legend-dot legend-signal"></span><span>Signal</span><span class="legend-dot legend-noise"></span><span>Uncertain</span><span class="legend-dot legend-error"></span><span>Wrong bit</span></div>
+        <p id="scene-status" class="scene-status" aria-live="polite">Loading example</p>
+        <p class="scene-explanation">Each line carries one phone's signal to the tower.</p>
+        <div id="playback-panel" class="playback-panel" hidden>
+          <div class="playback-top"><span id="playback-receipt" class="playback-receipt"></span><span id="playback-position" class="playback-position"></span></div>
+          <ol id="decode-stages" class="decode-stages" aria-label="Decoding stages"></ol>
+          <div class="playback-heading"><h3 id="playback-title"></h3><span id="playback-residual" class="playback-residual"></span></div>
+          <p id="playback-description" class="playback-description" aria-live="polite"></p>
+          <div id="playback-bits" class="playback-bits"></div>
+          <div id="playback-candidates" class="playback-candidates" hidden></div>
+          <div class="playback-actions"><button id="replay-pause" type="button" class="text-action">Pause</button><button id="replay-next" type="button" class="text-action">Next step</button><button id="replay-skip" type="button" class="text-action">Show final result</button><button id="sweep-stop" type="button" class="text-action" hidden>Stop sweep</button></div>
+          <div id="seed-progress" class="seed-progress" aria-label="Seed run progress"></div>
+        </div>
+      </section>
+
+      <section id="comparison-section" class="results-section" aria-labelledby="comparison-title">
+        <div class="section-heading"><div><h2 id="comparison-title">Experiment result</h2></div><div class="result-recipe" id="result-recipe"></div></div>
+        <div id="preview-placeholder" class="placeholder-card"><p>Run the experiment to compare the receiver's guesses.</p></div>
+        <div id="bit-comparison" class="bit-comparison" hidden>
+          <div class="bit-head"><span>Method</span><div id="truth-row" class="bit-cells truth-cells" aria-label="Bits that were sent"></div><span>Wrong bits</span><span title="A lower value means the guess fits the signal heard at the tower more closely.">Signal fit</span></div>
+          <div id="detector-rows"></div>
+          <div class="frame-note"><span class="truth-key">●</span> Top row: bits sent. Each row below is one decoder’s guess; red cells are wrong. <strong>Signal fit</strong> measures how closely that guess predicts what the antennas heard (lower is closer).</div>
+        </div>
+        <button id="algorithm-tab-link" class="text-action algorithm-tab-link" type="button" hidden>Explore how the quantum search works</button>
+      </section>
+    </section>
+
+    <section id="panel-algorithm" class="page-panel algorithm-panel" role="tabpanel" aria-labelledby="tab-algorithm" tabindex="0" hidden>
+      <div class="panel-intro"><h2>How the quantum search helps</h2><p><strong>QAOA</strong> means <strong>Quantum Approximate Optimization Algorithm</strong>. It does not decode the whole message: it samples possible changes to the eight least-certain bits. Regular software checks those guesses against the antenna readings. This circuit runs in a simulator, not on quantum hardware.</p></div>
+      <div class="algorithm-steps" aria-label="The four circuit stages">
+        <article><span>H</span><h3>Open up the choices</h3><p>Hadamard gates put each selected bit into a quantum state that can represent 0 and 1 together.</p></article>
+        <article><span>RZ · RZZ</span><h3>Encode the signal fit</h3><p>Single-bit and pair gates represent how each choice affects agreement with the tower’s readings.</p></article>
+        <article><span>RX</span><h3>Shift the chances</h3><p>Mixer gates change which bit combinations are more likely to appear.</p></article>
+        <article><span>M</span><h3>Read out guesses</h3><p>Measurement gives ordinary 0/1 strings. A classical search checks and refines them.</p></article>
+      </div>
+      <div id="quantum-placeholder" class="placeholder-card quantum-placeholder"><p>Run the experiment to see its circuit and measured candidates here.</p></div>
+      <div id="quantum-results" class="quantum-results" hidden>
+        <div id="execution-card" class="execution-card"></div>
+        <section class="circuit-explorer" aria-labelledby="circuit-title">
+          <div class="circuit-heading"><div><h3 id="circuit-title">Circuit from this run</h3><p>Select a stage to follow its gates.</p></div><span id="circuit-qubit-count" class="circuit-count"></span></div>
+          <div id="circuit-stages" class="circuit-stages" role="group" aria-label="Circuit stages">
+            <button type="button" data-circuit-stage="prepare" aria-pressed="true">Prepare</button>
+            <button type="button" data-circuit-stage="cost" aria-pressed="false">Encode signal fit</button>
+            <button type="button" data-circuit-stage="mix" aria-pressed="false">Explore choices</button>
+            <button type="button" data-circuit-stage="measure" aria-pressed="false">Measure</button>
+          </div>
+          <div id="circuit-visual" class="circuit-visual"></div>
+          <p id="circuit-explanation" class="circuit-explanation" aria-live="polite"></p>
+        </section>
+        <details class="trace-details"><summary>See the sampled candidates</summary><p class="histogram-explainer">Each string is one guess for the eight highlighted phones, in wire order. Its bar shows how often that guess appeared in the circuit’s 64 measurements. Random search gets the same number of tries.</p><div class="histogram-grid">
+          <article class="histogram-panel"><div class="panel-top"><h3>Random search</h3><span id="uniform-shot-label" class="shots-pill">64 samples</span></div><div id="uniform-histogram" class="histogram"></div></article>
+          <article class="histogram-panel quantum-panel"><div class="panel-top"><h3>QAOA</h3><span id="qaoa-shot-label" class="shots-pill">64 samples</span></div><div id="qaoa-histogram" class="histogram"></div></article>
+        </div></details>
+        <details class="trace-details"><summary>How candidates were checked</summary><div id="trace-content"></div></details>
+        <details class="trace-details execution-details"><summary>Technical details</summary><div id="execution-details-content"></div></details>
+      </div>
+    </section>
+
+    <section id="panel-benchmark" class="page-panel benchmark-panel" role="tabpanel" aria-labelledby="tab-benchmark" tabindex="0" hidden>
+      <div class="panel-intro"><h2>32,000 simulated transmissions</h2><p>How often did each search guess a bit incorrectly? Lower is better.</p></div>
+      <div id="benchmark-bars" class="benchmark-bars"></div>
+      <p id="benchmark-conclusion" class="benchmark-conclusion">Loading benchmark…</p>
+      <details class="trace-details benchmark-provenance"><summary>About this benchmark</summary><p class="data-provenance">These are simulated transmissions on held-out, ray-traced Arizona State University channels at 3.5 GHz. Repeated signals share physical channels, so 32,000 transmissions are not 32,000 independent locations.</p></details>
+    </section>
+  </main>
+
+  <footer class="footer"><span>Signal Rescue</span><span id="footer-status">Simulated signals · no radio hardware</span><button id="export-button" class="export-button" type="button" disabled>Export run JSON</button></footer>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>

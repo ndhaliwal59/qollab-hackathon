@@ -1,0 +1,30 @@
+{
+  "source_url": "https://deepmimo.net/scenarios/asu_campus_3p5",
+  "scenario": "asu_campus_3p5",
+  "frequency_hz": 3500000000,
+  "subcarrier": 0,
+  "total_subcarriers": 512,
+  "bandwidth_hz": 10000000,
+  "bs_antennas": 8,
+  "bs_array_shape": [
+    8,
+    1
+  ],
+  "spacing_wavelengths": 0.5,
+  "ue_antennas": 1,
+  "users_per_realization": 12,
+  "realizations": 126,
+  "spatial_groups": 42,
+  "spatial_grouping": "64 m tiles, 8 m boundary guard; disjoint users; adjacent retained positions stay in one group",
+  "spatial_split_seed": 7,
+  "guard_metres": 8,
+  "source_kind": "ray tracing, not measured over-the-air signals",
+  "source_archive_sha256": "80e4a4983847023158ed61a5a489025d72f4edcdac89edf4ee1323699e1b7da3",
+  "download_bytes": 30558838,
+  "download_cap_bytes": 100000000,
+  "processed_bytes": 102871,
+  "processed_cap_bytes": 20000000,
+  "synthesis": "sum_p sqrt(10^(power_dBW/10)/512) exp(j phase) exp(j*pi*antenna_index*sin(polar)*sin(azimuth)); reciprocal transpose",
+  "generator_reference": "https://github.com/DeepMIMO/DeepMIMO/blob/82be994e53a2e37d88a3575a3f6fd35bb6611b53/deepmimo/generator/channel.py",
+  "geometry_reference": "https://github.com/DeepMIMO/DeepMIMO/blob/82be994e53a2e37d88a3575a3f6fd35bb6611b53/deepmimo/generator/geometry.py"
+}

@@ -1,0 +1,8 @@
+{
+  "change": "Presentation only: replace overlapping quality-latency point labels with a legend",
+  "scores_recomputed": false,
+  "report_sha256": "a23d4c1ff85428713b28746f5d7e849951f5793e8132c37019d94b1aee8f040f",
+  "original_presentation_sha256": "cf26969359c81be665c03a2f3401dd8cb1e7656e0977728e33bee34eadd13d28",
+  "updated_presentation_sha256": "3fe286c28aa186329e2950333ef4eafc82e042a90258abe2a702c4f2c9a48bbc",
+  "original_scoring_source": "source_snapshot.zip"
+}

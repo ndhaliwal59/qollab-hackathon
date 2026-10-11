@@ -1,0 +1,33 @@
+{
+  "seeds": [
+    7,
+    8
+  ],
+  "uses_per_seed": 4,
+  "configs": 4,
+  "max_evals": 10,
+  "starts": 1,
+  "training_uses": 24,
+  "validation_uses": 24,
+  "profile": "smoke",
+  "dataset": "both",
+  "dataset_status": {
+    "DeepMIMO": "available",
+    "source_cap_bytes": 100000000,
+    "processed_cap_bytes": 20000000
+  },
+  "families": [
+    "rayleigh",
+    "correlated",
+    "rician",
+    "deepmimo"
+  ],
+  "detector": "MMSE + bounded single/pair refinement + coupled block sampler",
+  "candidate_samplers": [
+    "qaoa",
+    "uniform",
+    "biased",
+    "sa"
+  ],
+  "budget": "frozen config; all sampler/refinement budgets matched"
+}

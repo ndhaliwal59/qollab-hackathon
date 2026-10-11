@@ -1,0 +1,108 @@
+{
+  "scenario": "asu_campus_3p5",
+  "source_url": "https://deepmimo.net/api/download/secure?filename=asu_campus_3p5.zip",
+  "download_bytes": 30558838,
+  "download_cap_bytes": 50000000,
+  "archive_members": [
+    {
+      "name": "aoa_az_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "aoa_az_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "aoa_el_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "aoa_el_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "aod_az_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "aod_az_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "aod_el_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "aod_el_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "delay_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "delay_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "inter_pos_t001_tx000_r000.mat",
+      "bytes": 94990528
+    },
+    {
+      "name": "inter_pos_t001_tx000_r001.mat",
+      "bytes": 448
+    },
+    {
+      "name": "inter_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "inter_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "objects.json",
+      "bytes": 36153
+    },
+    {
+      "name": "params.json",
+      "bytes": 9667
+    },
+    {
+      "name": "phase_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "phase_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "power_t001_tx000_r000.mat",
+      "bytes": 5277432
+    },
+    {
+      "name": "power_t001_tx000_r001.mat",
+      "bytes": 232
+    },
+    {
+      "name": "rx_pos_t001_tx000_r000.mat",
+      "bytes": 1583368
+    },
+    {
+      "name": "rx_pos_t001_tx000_r001.mat",
+      "bytes": 208
+    },
+    {
+      "name": "tx_pos_t001_tx000_r000.mat",
+      "bytes": 208
+    },
+    {
+      "name": "tx_pos_t001_tx000_r001.mat",
+      "bytes": 208
+    },
+    {
+      "name": "vertices.mat",
+      "bytes": 6384
+    }
+  ]
+}

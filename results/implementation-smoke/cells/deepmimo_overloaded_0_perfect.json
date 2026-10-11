@@ -1,0 +1,122 @@
+{
+  "cost": {
+    "mmse": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 0,
+      "candidate_refinements": 0,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "mmse_sic": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 0,
+      "candidate_refinements": 0,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "local_single": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 0,
+      "candidate_refinements": 0,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "classical": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 0,
+      "candidate_refinements": 0,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "uniform": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "biased": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "sa": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 49152,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "qaoa": {
+      "shots": 1024,
+      "circuit_invocations": 16,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "ml_reference": {
+      "shots": 0,
+      "circuit_invocations": 0,
+      "candidates": 0,
+      "candidate_refinements": 0,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "opposite_warm": {
+      "shots": 1024,
+      "circuit_invocations": 16,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "uncertain_only": {
+      "shots": 1024,
+      "circuit_invocations": 16,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "no_refinement": {
+      "shots": 1024,
+      "circuit_invocations": 16,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    },
+    "real_only": {
+      "shots": 1024,
+      "circuit_invocations": 16,
+      "candidates": 1024,
+      "candidate_refinements": 64,
+      "sa_spin_proposals": 0,
+      "fallbacks": 0,
+      "residual_violations": 0
+    }
+  },
+  "replay": null
+}
