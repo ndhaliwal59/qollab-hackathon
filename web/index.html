@@ -41,7 +41,12 @@
           <tr><th scope="row">Exact search<small>Maximum-likelihood search</small></th><td>Checks every answer and picks the best fit. Accurate, but the work grows quickly.</td><td>2.61%<small>Best possible</small></td></tr>
         </tbody>
       </table></div>
-      <div class="chart-heading"><h3>Errors in 32,000 simulated transmissions</h3><p>Bit error rate: the share of sent bits the receiver got wrong. Lower is better.</p></div><div id="benchmark-bars" class="benchmark-bars" aria-label="Bit error rates for six decoding methods"></div>
+      <div class="chart-heading"><h3>Errors in 32,000 simulated transmissions</h3><p>Bit error rate: the share of sent bits the receiver got wrong. Lower is better.</p></div>
+      <div class="benchmark-notes" aria-label="Dataset and benchmark setup">
+        <article><h4>Channel data</h4><p>We combined three controlled complex-channel models—Rayleigh, correlated Rayleigh, and Rician—with a small slice of the <strong>DeepMIMO ASU Campus</strong> scenario at 3.5&nbsp;GHz. That slice contains 126 ray-traced channel snapshots linking 12 users to 8 base-station antennas. The channels are simulated from ray tracing, not measured over the air; transmitted bits and noise were generated for the experiment.</p></article>
+        <article><h4>How we ran the benchmark</h4><p>For each channel, we generated BPSK transmissions and background noise, then gave every decoder the same test cases. The full test used 5 random seeds with 200 channel uses for each of 4 channel families, 2 user loads (8 or 12), and 4 signal levels (8, 12, 16, or 20&nbsp;dB): 32,000 channel uses and 320,000 bits per method. QAOA settings were chosen on separate training and validation data, then frozen before this test. Its circuits ran in a classical simulator; no quantum hardware was used.</p></article>
+      </div>
+      <div id="benchmark-bars" class="benchmark-bars" aria-label="Bit error rates for six decoding methods"></div>
     </section>
     <section id="ours" class="story-section" aria-labelledby="ours-title">
       <div class="section-kicker">03 / OUR APPROACH</div><h2 id="ours-title">Add a QAOA-based search for the hardest bits</h2>

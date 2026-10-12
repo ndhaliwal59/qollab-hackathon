@@ -386,6 +386,10 @@ main section[id] { scroll-margin-top: 52px; }
 .chart-heading { margin: 18px 0 0; }
 .chart-heading h3 { margin: 0; font-size: 15px; }
 .chart-heading p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+.benchmark-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 16px 0 4px; padding: 13px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.benchmark-notes h4 { margin: 0 0 5px; font-size: 11px; }
+.benchmark-notes p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.benchmark-notes strong { color: var(--ink); }
 .benchmark-row { grid-template-columns: 190px minmax(50px, 1fr) 75px; }
 .benchmark-best { display: block; color: var(--quiet); font-size: 9px; }
 .benchmark-exact .benchmark-fill { background: #48626b; }
@@ -424,6 +428,7 @@ main section[id] { scroll-margin-top: 52px; }
   .method-ladder article > b { margin-top: 8px; }
   .pipeline { grid-template-columns: 1fr; }
   .benchmark-row { grid-template-columns: 112px minmax(25px, 1fr) 57px; }
+  .benchmark-notes { grid-template-columns: 1fr; gap: 12px; }
 }
 
 /* Keep the comparison readable without turning every method into a card. */
